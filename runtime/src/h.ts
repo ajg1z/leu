@@ -3,12 +3,13 @@ import { withoutNulls } from "./utils/arrays";
 export type VNode = VText | VElement | VFragment;
 
 interface VNodeBase {
-  el?: HTMLElement;
+  el?: HTMLElement | Text;
 }
 
 export interface VText extends VNodeBase {
   type: "text";
   value: string;
+  el?: Text;
 }
 
 export interface VElement<
@@ -19,11 +20,13 @@ export interface VElement<
   props: Record<string, any>;
   children: VNode[] | string[];
   listeners?: Record<string, (event: Event) => void>;
+  el?: HTMLElement;
 }
 
 export interface VFragment extends VNodeBase {
   type: "fragment";
   children: VNode[];
+  el?: HTMLElement;
 }
 
 // Тип для получения атрибутов HTML элемента
@@ -76,4 +79,24 @@ export function lipsum(length: number) {
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 
   return Array.from({ length }, () => hString(text + "\n"));
+}
+
+
+
+export function extractChildren(vdom: VNode): VNode[] {
+  if (!vdom || !(vdom as VFragment)?.children) {
+    return [];
+  }
+
+  const children: VNode[] = []
+
+  for (const child of (vdom as VFragment).children) {
+    if (child.type === "fragment") {
+      children.push(...extractChildren(child));
+    } else {
+      children.push(child);
+    }
+  }
+  
+  return children;
 }

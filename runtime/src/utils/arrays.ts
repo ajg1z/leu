@@ -44,44 +44,44 @@ export function arraysDiff<T>(
   return { added, removed };
 }
 
-export type RemoveOp = {
+export type RemoveOp<T> = {
   type: "remove";
   index: number;
-  item: unknown;
+  item: T;
 };
-export type NoopOp = {
+export type NoopOp<T> = {
   type: "noop";
   index: number;
   originalIndex: number;
-  item: unknown;
+  item: T;
 };
-export type AddOp = {
+export type AddOp<T> = {
   type: "add";
   index: number;
-  item: unknown;
+  item: T;
 };
-export type MoveOp = {
+export type MoveOp<T> = {
   type: "move";
   from: number;
   index: number;
   originalIndex: number;
-  item: unknown;
+  item: T;
 };
-export type ArrayDiffOperations = RemoveOp | NoopOp | AddOp | MoveOp;
+export type ArrayDiffOperations<T> = RemoveOp<T> | NoopOp<T> | AddOp<T> | MoveOp<T>;
 
 /**
  * A class that represents an array with original indices.
  * @param array - The array to represent.
  * @param equalsFn - The function to use to compare items.
  */
-export class ArrayWithOriginalIndices {
-  private array: unknown[] = [];
+export class ArrayWithOriginalIndices<T> {
+  private array: T[] = [];
   private originalIndices: number[] = [];
-  private equalsFn: (a: unknown, b: unknown) => boolean = (a, b) => a === b;
+  private equalsFn: (a: T, b: T) => boolean = (a, b) => a === b;
 
   constructor(
-    array: unknown[],
-    equalsFn: (a: unknown, b: unknown) => boolean = (a, b) => a === b
+    array: T[],
+    equalsFn: (a: T, b: T) => boolean = (a, b) => a === b
   ) {
     this.array = [...array];
     this.equalsFn = equalsFn;
@@ -102,7 +102,7 @@ export class ArrayWithOriginalIndices {
    * @param fromIndex - The index to start searching from.
    * @returns The index of the item, or -1 if the item is not found.
    */
-  findIndexFrom(item: unknown, fromIndex: number) {
+  findIndexFrom(item: T, fromIndex: number) {
     for (let i = fromIndex; i < this.length; i++) {
       if (this.equalsFn(item, this.array[i])) {
         return i;
@@ -117,7 +117,7 @@ export class ArrayWithOriginalIndices {
    * @param newArray - The new array to check against.
    * @returns True if the item is removed, false otherwise.
    */
-  isRemoved(index: number, newArray: unknown[]) {
+  isRemoved(index: number, newArray: T[]) {
     if (index >= this.length) {
       return false;
     }
@@ -138,7 +138,7 @@ export class ArrayWithOriginalIndices {
    * @param newArray - The new array to check against.
    * @returns True if the item is a noop, false otherwise.
    */
-  isNoop(index: number, newArray: unknown[]) {
+  isNoop(index: number, newArray: T[]) {
     if (index >= this.length) {
       return false;
     }
@@ -151,7 +151,7 @@ export class ArrayWithOriginalIndices {
    * @param index - The index of the item to create a noop operation for.
    * @returns The noop operation.
    */
-  noopItem(index: number): NoopOp {
+  noopItem(index: number): NoopOp<T> {
     return {
       type: "noop",
       index,
@@ -166,7 +166,7 @@ export class ArrayWithOriginalIndices {
    * @returns The operation to remove the item.
    */
   removeItem(index: number) {
-    const operation: RemoveOp = {
+    const operation: RemoveOp<T> = {
       type: "remove",
       index,
       item: this.array[index],
@@ -183,10 +183,10 @@ export class ArrayWithOriginalIndices {
    * @param toIndex - The index to move the item to.
    * @returns The operation to move the item.
    */
-  moveItem(item: unknown, toIndex: number) {
+  moveItem(item: T, toIndex: number) {
     const fromIndex = this.findIndexFrom(item, toIndex);
 
-    const operation: MoveOp = {
+    const operation: MoveOp<T> = {
       type: "move",
       index: toIndex,
       from: fromIndex,
@@ -209,7 +209,7 @@ export class ArrayWithOriginalIndices {
    * @param newArray - The new array to check against.
    * @returns True if the item is added, false otherwise.
    */
-  isAdded(index: number, item: unknown) {
+  isAdded(index: number, item: T) {
     return this.findIndexFrom(item, index) === -1;
   }
 
@@ -219,8 +219,8 @@ export class ArrayWithOriginalIndices {
    * @param item - The item to add.
    * @returns The operation to add the item.
    */
-  addItem(index: number, item: unknown) {
-    const operation: AddOp = {
+  addItem(index: number, item: T) {
+    const operation: AddOp<T> = {
       type: "add",
       index,
       item,
@@ -231,7 +231,7 @@ export class ArrayWithOriginalIndices {
   }
 
   removeItemsAfter(index: number) {
-    const operations: RemoveOp[] = [];
+    const operations: RemoveOp<T>[] = [];
     for (let i = index; i < this.length; i++) {
       operations.push(this.removeItem(i));
     }
@@ -239,14 +239,14 @@ export class ArrayWithOriginalIndices {
   }
 }
 
-export function arrayDiffSequence(
-  oldArray: unknown[],
-  newArray: unknown[],
-  equalsFn: (a: unknown, b: unknown) => boolean = (a, b) => a === b
-): ArrayDiffOperations[] {
-  const sequences: ArrayDiffOperations[] = [];
+export function arrayDiffSequence<T>(
+  oldArray: T[],
+  newArray: T[],
+  equalsFn: (a: T, b: T) => boolean = (a, b) => a === b
+): ArrayDiffOperations<T>[] {
+  const sequences: ArrayDiffOperations<T>[] = [];
 
-  const array = new ArrayWithOriginalIndices(oldArray, equalsFn);
+  const array = new ArrayWithOriginalIndices<T>(oldArray, equalsFn);
 
   for (let index = 0; index < newArray.length; index++) {
     if (array.isRemoved(index, newArray)) {

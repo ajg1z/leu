@@ -54,9 +54,9 @@ function setClass(element: HTMLElement, className: string | string[]) {
  * @param key - The style to set.
  * @param value - The value to set.
  */
-function setStyle(
+export function setStyle(
   element: HTMLElement,
-  key: keyof ElementStyle,
+  key: keyof HTMLElement['style'],
   value: string
 ) {
   (element.style as any)[key] = value;
@@ -67,7 +67,7 @@ function setStyle(
  * @param element - The element to remove the style from.
  * @param key - The style to remove.
  */
-function removeStyle(element: HTMLElement, key: keyof HTMLElement["style"]) {
+export function removeStyle(element: HTMLElement, key: keyof HTMLElement["style"]) {
   (element.style as any)[key] = null;
 }
 
@@ -77,7 +77,7 @@ function removeStyle(element: HTMLElement, key: keyof HTMLElement["style"]) {
  * @param key - The attribute to set.
  * @param value - The value to set.
  */
-function setAttribute(element: HTMLElement, key: string, value: string) {
+export function setAttribute(element: HTMLElement, key: string, value: string) {
   if (value === null) {
     removeAttribute(element, key);
   } else if (key.startsWith("data-")) {
@@ -92,7 +92,7 @@ function setAttribute(element: HTMLElement, key: string, value: string) {
  * @param element - The element to remove the attribute from.
  * @param key - The attribute to remove.
  */
-function removeAttribute(element: HTMLElement, key: string) {
+export function removeAttribute(element: HTMLElement, key: string) {
   (element as HTMLElement & Record<string, any>)[key] = null;
   element.removeAttribute(key);
 }
