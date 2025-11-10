@@ -9,11 +9,11 @@
  * @returns {Array<string>} changed - The keys that were changed.
  */
 export function objectsDiff(
-  oldObject: Record<string, any>,
-  newObject: Record<string, any>
+  oldObject: Record<string, any> = {},
+  newObject: Record<string, any> = {}
 ) {
   const oldKeys = new Set(Object.keys(oldObject));
-  const newKeys = new Set(Object.keys(newObject));
+  const newKeys = new Set(Object.keys(newObject ?? {}));
 
   const removed = Array.from(oldKeys).filter((key) => !newKeys.has(key));
   const added: string[] = [];

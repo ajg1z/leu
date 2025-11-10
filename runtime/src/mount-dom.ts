@@ -79,6 +79,7 @@ function createTextNode(vdom: VText, container: HTMLElement, index?: number) {
   const { value } = vdom;
 
   const textNode = document.createTextNode(value);
+  vdom.el = textNode;
   insert(textNode, container, index);
 }
 

@@ -26,4 +26,7 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
+  // Важно: указываем, что index.html - это точка входа
+  root: ".",
+  publicDir: false,
 });

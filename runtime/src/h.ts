@@ -29,7 +29,8 @@ export interface VFragment extends VNodeBase {
   el?: HTMLElement;
 }
 
-// Тип для получения атрибутов HTML элемента
+// Тип для получения атрибутов HTML элемента (зарезервирован для будущего использования)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ElementProps<T extends keyof HTMLElementTagNameMap> = Partial<
   HTMLElementTagNameMap[T]
 > &
@@ -41,7 +42,6 @@ export function h<T extends keyof HTMLElementTagNameMap>(
   props: Record<string, any>,
   children: (VNode | string)[]
 ): VElement<T> {
-  console.log("H");
   return {
     tag,
     props,
@@ -81,14 +81,12 @@ export function lipsum(length: number) {
   return Array.from({ length }, () => hString(text + "\n"));
 }
 
-
-
 export function extractChildren(vdom: VNode): VNode[] {
   if (!vdom || !(vdom as VFragment)?.children) {
     return [];
   }
 
-  const children: VNode[] = []
+  const children: VNode[] = [];
 
   for (const child of (vdom as VFragment).children) {
     if (child.type === "fragment") {
@@ -97,6 +95,6 @@ export function extractChildren(vdom: VNode): VNode[] {
       children.push(child);
     }
   }
-  
+
   return children;
 }

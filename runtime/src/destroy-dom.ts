@@ -2,6 +2,7 @@ import { VElement, VFragment, VNode, VText } from "./h";
 import { removeEventListeners } from "./events";
 
 export function destroyDom(vdom: VNode) {
+  console.log("destroyDom", vdom);
   switch (vdom.type) {
     case "text":
       removeTextNode(vdom);

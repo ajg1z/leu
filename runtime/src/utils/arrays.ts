@@ -1,3 +1,5 @@
+import { areNodesEqual } from "../nodes-equal";
+
 /**
  * Removes nulls from an array.
  * @param array - The array to remove nulls from.
@@ -67,7 +69,11 @@ export type MoveOp<T> = {
   originalIndex: number;
   item: T;
 };
-export type ArrayDiffOperations<T> = RemoveOp<T> | NoopOp<T> | AddOp<T> | MoveOp<T>;
+export type ArrayDiffOperations<T> =
+  | RemoveOp<T>
+  | NoopOp<T>
+  | AddOp<T>
+  | MoveOp<T>;
 
 /**
  * A class that represents an array with original indices.
@@ -232,8 +238,8 @@ export class ArrayWithOriginalIndices<T> {
 
   removeItemsAfter(index: number) {
     const operations: RemoveOp<T>[] = [];
-    for (let i = index; i < this.length; i++) {
-      operations.push(this.removeItem(i));
+    while (index < this.length) {
+      operations.push(this.removeItem(index));
     }
     return operations;
   }
