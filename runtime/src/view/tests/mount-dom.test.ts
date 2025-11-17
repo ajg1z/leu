@@ -37,7 +37,7 @@ describe("mountDom", () => {
       container.appendChild(existingText);
 
       const textNode = hString("New Text");
-      mountDom(textNode, container, 0);
+      mountDom(textNode, container, { index: 0 });
 
       expect(container.childNodes.length).toBe(2);
       expect(container.childNodes[0].nodeValue).toBe("New Text");
@@ -47,7 +47,7 @@ describe("mountDom", () => {
     it("should mount text node at the end when index is greater than children length", () => {
       container.appendChild(document.createTextNode("First"));
       const textNode = hString("Last");
-      mountDom(textNode, container, 10);
+      mountDom(textNode, container, { index: 10 });
 
       expect(container.childNodes.length).toBe(2);
       expect(container.lastChild?.nodeValue).toBe("Last");
@@ -132,7 +132,7 @@ describe("mountDom", () => {
     it("should mount element at specific index", () => {
       container.appendChild(document.createElement("div"));
       const element = h("span", {}, []);
-      mountDom(element, container, 0);
+      mountDom(element, container, { index: 0 });
 
       expect(container.childNodes[0].nodeName).toBe("SPAN");
       expect(container.childNodes[1].nodeName).toBe("DIV");
@@ -159,7 +159,7 @@ describe("mountDom", () => {
         hString("Fragment 1"),
         hString("Fragment 2"),
       ]);
-      mountDom(fragment, container, 0);
+      mountDom(fragment, container, { index: 0 });
 
       expect(container.childNodes.length).toBe(3);
       expect(container.childNodes[0].nodeValue).toBe("Fragment 1");
@@ -178,7 +178,7 @@ describe("mountDom", () => {
 
     it("should throw error for negative index", () => {
       const element = h("div", {}, []);
-      expect(() => mountDom(element, container, -1)).toThrow(
+      expect(() => mountDom(element, container, { index: -1 })).toThrow(
         "index is negative"
       );
     });

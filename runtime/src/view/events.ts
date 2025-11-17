@@ -8,10 +8,16 @@
 export function addEventListener(
   evtName: string,
   handler: (event: Event) => void,
-  element: HTMLElement
+  element: HTMLElement,
+  thisObject?: unknown
 ) {
-  element.addEventListener(evtName, handler);
-  return handler;
+  function boundHandler(event: Event) {
+    thisObject ? handler.call(thisObject, event) : handler(event);
+  }
+
+  element.addEventListener(evtName, boundHandler);
+
+  return boundHandler;
 }
 
 /**
@@ -22,12 +28,17 @@ export function addEventListener(
  */
 export function addEventListeners(
   events: Record<string, (event: Event) => void> | undefined,
-  element: HTMLElement
+  element: HTMLElement,
+  options?: {
+    thisObject?: unknown;
+  }
 ) {
+  const thisObject = options?.thisObject ?? null;
+
   const safeEvents = events ?? {};
   const listeners: Record<string, (event: Event) => void> = {};
   for (const [event, handler] of Object.entries(safeEvents)) {
-    listeners[event] = addEventListener(event, handler, element);
+    listeners[event] = addEventListener(event, handler, element, thisObject);
   }
   return listeners;
 }

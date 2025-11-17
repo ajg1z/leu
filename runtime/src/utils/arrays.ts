@@ -1,4 +1,4 @@
-import { areNodesEqual } from "../nodes-equal";
+import { areNodesEqual } from "../view/nodes-equal";
 
 /**
  * Removes nulls from an array.

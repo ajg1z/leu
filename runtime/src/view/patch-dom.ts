@@ -9,9 +9,9 @@ import { addEventListener } from "./events";
 import { extractChildren, VElement, VNode, VText } from "./h";
 import { mountDom } from "./mount-dom";
 import { areNodesEqual } from "./nodes-equal";
-import { arrayDiffSequence, arraysDiff } from "./utils/arrays";
-import { objectsDiff } from "./utils/objects";
-import { isNotBlankOrEmptyString } from "./utils/string";
+import { arrayDiffSequence, arraysDiff } from "../utils/arrays";
+import { objectsDiff } from "../utils/objects";
+import { isNotBlankOrEmptyString } from "../utils/string";
 
 function findIndexInParent(node: ChildNode, parent: HTMLElement) {
   const children = Array.from(parent.childNodes);
@@ -90,7 +90,8 @@ function patchEvents(
   el: HTMLElement,
   oldListeners: Record<string, (event: Event) => void> | undefined,
   oldEvents: Record<string, any>,
-  newEvents: Record<string, any>
+  newEvents: Record<string, any>,
+  thisObject?: unknown
 ) {
   const { added, changed, removed } = objectsDiff(oldEvents, newEvents);
 
@@ -113,14 +114,20 @@ function patchEvents(
 
   // Добавляем новые и измененные listeners
   for (const event of added.concat(changed)) {
-    const listener = addEventListener(event, newEvents[event], el);
+    const listener = addEventListener(event, newEvents[event], el, thisObject);
     updatedListeners[event] = listener;
   }
 
   return updatedListeners;
 }
 
-function patchElement(oldVdom: VElement, newVdom: VElement) {
+function patchElement(
+  oldVdom: VElement,
+  newVdom: VElement,
+  options?: { thisObject?: unknown }
+) {
+  const { thisObject } = options ?? {};
+
   const el = newVdom.el!;
 
   const {
@@ -143,10 +150,22 @@ function patchElement(oldVdom: VElement, newVdom: VElement) {
   patchClasses(el, oldClass, newClass);
   patchStyles(el, oldStyle, newStyle);
 
-  newVdom.listeners = patchEvents(el, oldListeners, oldEvents, newEvents);
+  newVdom.listeners = patchEvents(
+    el,
+    oldListeners,
+    oldEvents,
+    newEvents,
+    thisObject
+  );
 }
 
-function patchChildren(oldVdom: VNode, newVdom: VNode) {
+function patchChildren(
+  oldVdom: VNode,
+  newVdom: VNode,
+  options: { offset?: number; thisObject?: unknown } = {}
+) {
+  const { offset = 0 } = options;
+
   const oldChildren = extractChildren(oldVdom);
   const newChildren = extractChildren(newVdom);
   const parentEl = newVdom.el!;
@@ -157,13 +176,11 @@ function patchChildren(oldVdom: VNode, newVdom: VNode) {
     areNodesEqual
   );
 
-  debugger;
-
   for (const operation of diffSequences) {
     switch (operation.type) {
       case "add":
         const { item, index } = operation;
-        mountDom(item, parentEl as HTMLElement, index);
+        mountDom(item, parentEl as HTMLElement, { index: index + offset });
         break;
       case "remove":
         const { item: removedItem } = operation;
@@ -176,10 +193,10 @@ function patchChildren(oldVdom: VNode, newVdom: VNode) {
         const newChild = newChildren[index];
 
         const el = oldChild.el!;
-        const elAtTargetIndex = parentEl.childNodes[index];
+        const elAtTargetIndex = parentEl.childNodes[index + offset];
 
         parentEl.insertBefore(el, elAtTargetIndex);
-        patchDom(oldChild, newChild, parentEl as HTMLElement);
+        patchDom(oldChild, newChild, parentEl as HTMLElement, {});
         break;
       }
       case "noop": {
@@ -188,7 +205,8 @@ function patchChildren(oldVdom: VNode, newVdom: VNode) {
         patchDom(
           oldChildren[originalIndex],
           newChildren[index],
-          parentEl as HTMLElement
+          parentEl as HTMLElement,
+          {}
         );
         break;
       }
@@ -199,12 +217,13 @@ function patchChildren(oldVdom: VNode, newVdom: VNode) {
 export function patchDom(
   oldVdom: VNode,
   newVdom: VNode,
-  container: HTMLElement
+  container: HTMLElement,
+  options: { offset?: number; thisObject?: unknown } = {}
 ) {
   if (!areNodesEqual(oldVdom, newVdom)) {
     const index = findIndexInParent(oldVdom.el as ChildNode, container);
     destroyDom(oldVdom);
-    mountDom(newVdom, container, index);
+    mountDom(newVdom, container, { index, thisObject: options?.thisObject });
 
     return newVdom;
   }
@@ -213,14 +232,16 @@ export function patchDom(
 
   switch (newVdom.type) {
     case "element":
-      patchElement(oldVdom as VElement, newVdom);
+      patchElement(oldVdom as VElement, newVdom, {
+        thisObject: options?.thisObject,
+      });
       break;
     case "text":
       patchText(oldVdom as VText, newVdom);
       break;
   }
 
-  patchChildren(oldVdom, newVdom);
+  patchChildren(oldVdom, newVdom, options);
 
   return newVdom;
 }

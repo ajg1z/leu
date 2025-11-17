@@ -30,3 +30,13 @@ export function objectsDiff(
   }
   return { added, removed, changed };
 }
+
+/**
+ * Checks if an object has a property.
+ * @param object - The object to check.
+ * @param key - The property to check.
+ * @returns True if the object has the property, false otherwise.
+ */
+export function hasOwnProperty(object: Record<string, any>, key: string) {
+  return Object.prototype.hasOwnProperty.call(object, key);
+}

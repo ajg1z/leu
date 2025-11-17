@@ -2,16 +2,20 @@ import { setAttributes } from "./attributes";
 import { addEventListeners } from "./events";
 import { VElement, VFragment, VNode, VText } from "./h";
 
-export function mountDom(vdom: VNode, container: HTMLElement, index?: number) {
+export function mountDom(
+  vdom: VNode,
+  container: HTMLElement,
+  options?: { index?: number; thisObject?: unknown }
+) {
   switch (vdom.type) {
     case "text":
-      createTextNode(vdom, container, index);
+      createTextNode(vdom, container, options);
       break;
     case "element":
-      createElementNode(vdom, container, index);
+      createElementNode(vdom, container, options);
       break;
     case "fragment":
-      createFragmentsNodes(vdom, container, index);
+      createFragmentsNodes(vdom, container, options);
       break;
     default:
       throw new Error(`Unknown node type ${vdom}`);
@@ -21,13 +25,18 @@ export function mountDom(vdom: VNode, container: HTMLElement, index?: number) {
 function createFragmentsNodes(
   vdom: VFragment,
   container: HTMLElement,
-  index?: number
+  options?: { index?: number; thisObject?: unknown }
 ) {
+  const { index } = options ?? {};
+
   const { children } = vdom;
   vdom.el = container;
 
   children.forEach((child, i) => {
-    mountDom(child, container, index != null ? index + i : undefined);
+    mountDom(child, container, {
+      index: index != null ? index + i : undefined,
+      thisObject: options?.thisObject,
+    });
   });
 }
 
@@ -39,16 +48,18 @@ function createFragmentsNodes(
 function createElementNode(
   vdom: VElement,
   container: HTMLElement,
-  index?: number
+  options?: { index?: number; thisObject?: unknown }
 ) {
+  const { index } = options ?? {};
+
   const { tag, props, children } = vdom;
 
   const element = document.createElement(tag);
 
-  addProps(element, props, vdom);
+  addProps(element, props, vdom, options);
   vdom.el = element;
   children.forEach((child) => {
-    mountDom(child as VNode, element);
+    mountDom(child as VNode, element, { thisObject: options?.thisObject });
   });
   insert(element, container, index);
 }
@@ -62,11 +73,12 @@ function createElementNode(
 function addProps(
   element: HTMLElement,
   props: Record<string, any>,
-  vdom: VElement
+  vdom: VElement,
+  options?: { thisObject?: unknown }
 ) {
   const { on: events, ...attrs } = props;
 
-  vdom.listeners = addEventListeners(events, element);
+  vdom.listeners = addEventListeners(events, element, options);
   setAttributes(element, attrs);
 }
 
@@ -75,11 +87,18 @@ function addProps(
  * @param vdom - The text node to create.
  * @param container - The container to append the text node to.
  */
-function createTextNode(vdom: VText, container: HTMLElement, index?: number) {
+function createTextNode(
+  vdom: VText,
+  container: HTMLElement,
+  options?: { index?: number; thisObject?: unknown }
+) {
+  const { index } = options ?? {};
+
   const { value } = vdom;
 
   const textNode = document.createTextNode(value);
   vdom.el = textNode;
+
   insert(textNode, container, index);
 }
 

@@ -1,4 +1,4 @@
-import { withoutNulls } from "./utils/arrays";
+import { withoutNulls } from "../utils/arrays";
 
 export type VNode = VText | VElement | VFragment;
 
@@ -28,14 +28,6 @@ export interface VFragment extends VNodeBase {
   children: VNode[];
   el?: HTMLElement;
 }
-
-// Тип для получения атрибутов HTML элемента (зарезервирован для будущего использования)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type ElementProps<T extends keyof HTMLElementTagNameMap> = Partial<
-  HTMLElementTagNameMap[T]
-> &
-  Partial<GlobalEventHandlers> &
-  Record<string, any>;
 
 export function h<T extends keyof HTMLElementTagNameMap>(
   tag: T,
