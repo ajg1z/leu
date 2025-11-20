@@ -6,7 +6,7 @@ import {
 } from "./attributes";
 import { destroyDom } from "./destroy-dom";
 import { addEventListener } from "./events";
-import { extractChildren, VElement, VNode, VText } from "./h";
+import { extractChildren, VComponent, VElement, VNode, VText } from "./h";
 import { mountDom } from "./mount-dom";
 import { areNodesEqual } from "./nodes-equal";
 import { arrayDiffSequence, arraysDiff } from "../utils/arrays";
@@ -214,6 +214,22 @@ function patchChildren(
   }
 }
 
+function patchComponent(
+  oldVdom: VComponent,
+  newVdom: VComponent,
+  options?: { thisObject?: unknown }
+) {
+  const { thisObject } = options ?? {};
+
+  const { instance, props, component } = newVdom;
+
+  instance?.updateProps(props);
+
+  newVdom.instance = instance;
+  newVdom.component = component;
+  newVdom.el = instance?.firstElement as HTMLElement;
+}
+
 export function patchDom(
   oldVdom: VNode,
   newVdom: VNode,
@@ -238,6 +254,11 @@ export function patchDom(
       break;
     case "text":
       patchText(oldVdom as VText, newVdom);
+      break;
+    case "component":
+      patchComponent(oldVdom as VComponent, newVdom, {
+        thisObject: options?.thisObject,
+      });
       break;
   }
 

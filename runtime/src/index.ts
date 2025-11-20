@@ -87,21 +87,19 @@ interface TodoState {
 }
 
 const TodoAppComponent = defineComponent<
-  TodoState,
+  TodoState & { nextId: number },
   {},
   {
     addTodo: (text: string) => void;
     setInput: (value: string) => void;
+    toggleTodo: (id: number) => void;
+    deleteTodo: (id: number) => void;
+    clearCompleted: () => void;
   }
 >({
-  state: () => ({ todos: [], inputValue: "" }),
+  state: () => ({ todos: [], inputValue: "", nextId: 1 }),
   render() {
-    const { state, emit } = (this as any).props as {
-      state: TodoState;
-      emit: (key: string, value: unknown) => void;
-    };
-    const typedState = state as TodoState;
-    const { todos, inputValue } = typedState;
+    const { todos, inputValue } = this.state;
 
     const activeTodos = todos.filter((todo) => !todo.completed);
     const completedTodos = todos.filter((todo) => todo.completed);
@@ -114,12 +112,6 @@ const TodoAppComponent = defineComponent<
           margin: "0 auto",
           padding: "20px",
           fontFamily: "Arial, sans-serif",
-        },
-        on: {
-          click: () => {
-            console.log("click", this);
-            this.addTodo("test");
-          },
         },
       },
       [
@@ -152,7 +144,7 @@ const TodoAppComponent = defineComponent<
                 on: {
                   input: (e: Event) => {
                     const target = e.target as HTMLInputElement;
-                    emit("setInput", target.value);
+                    this.setInput(target.value);
                   },
                 },
               },
@@ -173,8 +165,8 @@ const TodoAppComponent = defineComponent<
                 on: {
                   click: () => {
                     if (inputValue.trim()) {
-                      emit("addTodo", inputValue.trim());
-                      emit("setInput", "");
+                      this.addTodo(inputValue.trim());
+                      this.setInput("");
                     }
                   },
                 },
@@ -241,7 +233,7 @@ const TodoAppComponent = defineComponent<
                         },
                         on: {
                           change: () => {
-                            emit("toggleTodo", todo.id);
+                            this.toggleTodo(todo.id);
                           },
                         },
                       },
@@ -272,7 +264,7 @@ const TodoAppComponent = defineComponent<
                         },
                         on: {
                           click: () => {
-                            emit("deleteTodo", todo.id);
+                            this.deleteTodo(todo.id);
                           },
                         },
                       },
@@ -299,7 +291,7 @@ const TodoAppComponent = defineComponent<
                 },
                 on: {
                   click: () => {
-                    emit("clearCompleted", null);
+                    this.clearCompleted();
                   },
                 },
               },
@@ -310,84 +302,47 @@ const TodoAppComponent = defineComponent<
     );
   },
   methods: {
-    addTodo(text: string) {
-      console.log("addTodo", this.addTodo);
-    },
     setInput(value: string) {
-      console.log("setInput", this.state);
+      this.updateState({ inputValue: value });
+    },
+    addTodo(text: string) {
+      if (!text.trim()) return;
+      const newTodo: Todo = {
+        id: this.state.nextId,
+        text,
+        completed: false,
+      };
+      this.updateState({
+        todos: [...this.state.todos, newTodo],
+        nextId: this.state.nextId + 1,
+      });
+    },
+    toggleTodo(id: number) {
+      this.updateState({
+        todos: this.state.todos.map((todo) =>
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        ),
+      });
+    },
+    deleteTodo(id: number) {
+      this.updateState({
+        todos: this.state.todos.filter((todo) => todo.id !== id),
+      });
+    },
+    clearCompleted() {
+      this.updateState({
+        todos: this.state.todos.filter((todo) => !todo.completed),
+      });
     },
   },
 });
-
-function TodoApp(
-  state: Record<string, any>,
-  emit: (key: string, value: unknown) => void
-) {
-  const component = new TodoAppComponent({ state, emit });
-  return component.render();
-}
 
 // Основная функция инициализации фреймворка
 function init() {
   const appElement = document.getElementById("app");
   if (appElement) {
-    let nextId = 1;
-    const app = createApp({
-      state: {
-        todos: [],
-        inputValue: "",
-      } as TodoState,
-      view: TodoApp,
-      reducers: {
-        setInput: (state: Record<string, any>, value: unknown) => {
-          const typedState = state as TodoState;
-          return {
-            ...typedState,
-            inputValue: value as string,
-          };
-        },
-        addTodo: (state: Record<string, any>, value: unknown) => {
-          const typedState = state as TodoState;
-          const text = value as string;
-          if (!text.trim()) return typedState;
-          const newTodo: Todo = {
-            id: nextId++,
-            text,
-            completed: false,
-          };
-          return {
-            ...typedState,
-            todos: [...typedState.todos, newTodo],
-          };
-        },
-        toggleTodo: (state: Record<string, any>, value: unknown) => {
-          const typedState = state as TodoState;
-          const id = value as number;
-          return {
-            ...typedState,
-            todos: typedState.todos.map((todo) =>
-              todo.id === id ? { ...todo, completed: !todo.completed } : todo
-            ),
-          };
-        },
-        deleteTodo: (state: Record<string, any>, value: unknown) => {
-          const typedState = state as TodoState;
-          const id = value as number;
-          return {
-            ...typedState,
-            todos: typedState.todos.filter((todo) => todo.id !== id),
-          };
-        },
-        clearCompleted: (state: Record<string, any>) => {
-          const typedState = state as TodoState;
-          return {
-            ...typedState,
-            todos: typedState.todos.filter((todo) => !todo.completed),
-          };
-        },
-      },
-    });
-    app.mount(appElement);
+    const component = new TodoAppComponent({});
+    component.mount(appElement);
   } else {
     console.error("App not found");
   }

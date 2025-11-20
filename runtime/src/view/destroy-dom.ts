@@ -14,6 +14,10 @@ export function destroyDom(vdom: VNode | null) {
     case "fragment":
       removeFragmentsNodes(vdom);
       break;
+    case "component":
+      vdom.instance?.unmount();
+      vdom.instance = null;
+      break;
     default:
       throw new Error(`Unknown node type`);
   }

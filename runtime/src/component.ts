@@ -10,11 +10,14 @@ export interface ComponentBase<
   hostElement: HTMLElement | null;
   isMounted: boolean;
   state: State;
+  eventsHandlers: Record<string, (event: Event) => void>;
+  parentComponent: ComponentBase<any, any> | null;
   props: Props;
   elements: (HTMLElement | Text | undefined)[];
   firstElement: HTMLElement | Text | undefined;
   offset: number;
   updateState(state: any): void;
+  updateProps(props: Props): void;
   patch(): void;
   render(): VNode;
   mount(hostElement: HTMLElement, index?: number): void;
@@ -54,10 +57,18 @@ export function defineComponent<
     public isMounted = false;
     public state: State = {} as State;
     public props: Props = {} as Props;
+    public eventsHandlers: Record<string, (data?: unknown) => void> = {};
+    public parentComponent: ComponentBase<any, any> | null = null;
 
-    constructor(props: Props = {} as Props) {
+    constructor(
+      props: Props = {} as Props,
+      eventsHandlers: Record<string, (data?: unknown) => void> = {},
+      parentComponent: ComponentBase<any, any> | null = null
+    ) {
       this.props = props;
       this.state = state ? state(props) : ({} as State);
+      this.eventsHandlers = eventsHandlers;
+      this.parentComponent = parentComponent;
     }
 
     /**
@@ -69,7 +80,13 @@ export function defineComponent<
       }
 
       if (this.vdom.type === "fragment") {
-        return extractChildren(this.vdom).map((child) => child.el);
+        return extractChildren(this.vdom).flatMap((child) => {
+          if (child.type === "component") {
+            return child.instance?.elements ?? [];
+          }
+
+          return [child.el];
+        });
       }
 
       return [this.vdom.el];
@@ -97,6 +114,11 @@ export function defineComponent<
 
     static test() {
       console.log("test");
+    }
+
+    updateProps(props: Props) {
+      this.props = { ...this.props, ...props };
+      this.patch();
     }
 
     updateState(state: any) {

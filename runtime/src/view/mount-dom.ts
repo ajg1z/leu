@@ -1,6 +1,8 @@
+import { ComponentBase } from "../component";
+import { extractPropsAndEvents } from "../utils/props";
 import { setAttributes } from "./attributes";
 import { addEventListeners } from "./events";
-import { VElement, VFragment, VNode, VText } from "./h";
+import { VComponent, VElement, VFragment, VNode, VText } from "./h";
 
 export function mountDom(
   vdom: VNode,
@@ -17,9 +19,65 @@ export function mountDom(
     case "fragment":
       createFragmentsNodes(vdom, container, options);
       break;
+    case "component":
+      createComponentNode(vdom, container, options);
+      break;
     default:
       throw new Error(`Unknown node type ${vdom}`);
   }
+}
+
+/**
+ * Проверяет, является ли значение классом (конструктором).
+ * @param value - Значение для проверки.
+ * @returns true, если значение является классом.
+ */
+function isClass(value: unknown): value is new (...args: any[]) => any {
+  if (typeof value !== "function") {
+    return false;
+  }
+
+  // Проверка строкового представления - классы начинаются с "class"
+  const stringRepresentation = Function.prototype.toString.call(value);
+  if (stringRepresentation.startsWith("class")) {
+    return true;
+  }
+
+  // Проверка, что это функция-конструктор (не стрелочная функция)
+  // Стрелочные функции не имеют prototype
+  if (!value.prototype) {
+    return false;
+  }
+
+  // Проверка, что это не обычная функция (обычные функции могут иметь prototype,
+  // но классы имеют prototype.constructor, который равен самой функции)
+  return value.prototype.constructor === value;
+}
+
+function createComponentNode(
+  vdom: VComponent,
+  container: HTMLElement,
+  options?: { index?: number; thisObject?: unknown }
+) {
+  const { index } = options ?? {};
+  const { component } = vdom;
+
+  if (!isClass(component)) {
+    throw new Error("component is not a class");
+  }
+
+  const { props, events } = extractPropsAndEvents(vdom);
+
+  const instance = new component(
+    props,
+    events,
+    options?.thisObject as ComponentBase<any, any> | null
+  );
+
+  instance.mount(container, index);
+  vdom.el = instance.firstElement as HTMLElement;
+  vdom.instance = instance;
+  vdom.component = component;
 }
 
 function createFragmentsNodes(
