@@ -12,6 +12,7 @@ import { areNodesEqual } from "./nodes-equal";
 import { arrayDiffSequence, arraysDiff } from "../utils/arrays";
 import { objectsDiff } from "../utils/objects";
 import { isNotBlankOrEmptyString } from "../utils/string";
+import { extractPropsAndEvents } from "../utils/props";
 
 function findIndexInParent(node: ChildNode, parent: HTMLElement) {
   const children = Array.from(parent.childNodes);
@@ -221,7 +222,8 @@ function patchComponent(
 ) {
   const { thisObject } = options ?? {};
 
-  const { instance, props, component } = newVdom;
+  const { instance, component } = oldVdom;
+  const { props } = extractPropsAndEvents(newVdom);
 
   instance?.updateProps(props);
 

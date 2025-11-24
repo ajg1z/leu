@@ -1,3 +1,4 @@
+import { Dispatcher } from "./dispatcher";
 import { hasOwnProperty } from "./utils/objects";
 import { destroyDom, h, mountDom, patchDom, VNode } from "./view";
 import { extractChildren } from "./view/h";
@@ -19,6 +20,7 @@ export interface ComponentBase<
   updateState(state: any): void;
   updateProps(props: Props): void;
   patch(): void;
+  emit(eventName: string, payload: unknown): void;
   render(): VNode;
   mount(hostElement: HTMLElement, index?: number): void;
   unmount(): void;
@@ -59,6 +61,8 @@ export function defineComponent<
     public props: Props = {} as Props;
     public eventsHandlers: Record<string, (data?: unknown) => void> = {};
     public parentComponent: ComponentBase<any, any> | null = null;
+    public dispatcher: Dispatcher = new Dispatcher();
+    public subscriptions: (() => void)[] = [];
 
     constructor(
       props: Props = {} as Props,
@@ -69,6 +73,26 @@ export function defineComponent<
       this.state = state ? state(props) : ({} as State);
       this.eventsHandlers = eventsHandlers;
       this.parentComponent = parentComponent;
+    }
+
+    wireEventsHandlers() {
+      for (const key in this.eventsHandlers) {
+        this.subscriptions = Object.entries(this.eventsHandlers).map(
+          ([eventName, handler]) => {
+            return this.wireAfterHandler(eventName, handler);
+          }
+        );
+      }
+    }
+
+    wireAfterHandler(eventName: string, handler: (payload: unknown) => void) {
+      return this.dispatcher.subscribe(eventName, (payload) => {
+        if (this.parentComponent) {
+          handler.call(this.parentComponent, payload);
+        } else {
+          handler(payload);
+        }
+      });
     }
 
     /**
@@ -126,6 +150,10 @@ export function defineComponent<
       this.patch();
     }
 
+    emit(eventName: string, payload: unknown) {
+      this.dispatcher.dispatch(eventName, payload);
+    }
+
     patch() {
       if (!this.isMounted) {
         console.info("component not mounted");
@@ -158,6 +186,7 @@ export function defineComponent<
         hostElement,
         index !== undefined ? { index, thisObject: this } : { thisObject: this }
       );
+      this.wireEventsHandlers();
 
       this.hostElement = hostElement;
       this.isMounted = true;
@@ -170,9 +199,11 @@ export function defineComponent<
       }
 
       destroyDom(this.vdom);
+      this.subscriptions.forEach((unsubscribe) => unsubscribe());
       this.vdom = null;
       this.hostElement = null;
       this.isMounted = false;
+      this.subscriptions = [];
     }
   }
 

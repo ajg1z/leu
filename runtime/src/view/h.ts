@@ -17,6 +17,7 @@ export interface VComponent<
   Props extends Record<string, any> = Record<string, any>
 > extends VNodeBase {
   type: "component";
+  key?: string;
   component: new (
     props: Props,
     eventsHandlers: Record<string, (data?: unknown) => void>,
@@ -69,7 +70,7 @@ export function h<T extends ComponentBase<Record<string, any>, any>>(
 export function h(
   tag: keyof HTMLElementTagNameMap | ComponentBase<Record<string, any>, any>,
   props: any,
-  children: (VNode | string)[]
+  children: (VNode | string)[] = []
 ): VElement<any> | VComponent<any> {
   const type = typeof tag === "function" ? "component" : "element";
 
@@ -79,6 +80,7 @@ export function h(
       component: tag as any,
       instance: null,
       props,
+      key: props.key,
       children: mapTextNodes(withoutNulls(children)),
     } as VComponent<any>;
   }

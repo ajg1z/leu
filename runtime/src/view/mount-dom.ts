@@ -76,8 +76,10 @@ function createComponentNode(
 
   instance.mount(container, index);
   vdom.el = instance.firstElement as HTMLElement;
+
   vdom.instance = instance;
   vdom.component = component;
+  vdom.props = instance.props;
 }
 
 function createFragmentsNodes(
@@ -110,15 +112,16 @@ function createElementNode(
 ) {
   const { index } = options ?? {};
 
-  const { tag, props, children } = vdom;
+  const { tag, children } = vdom;
 
   const element = document.createElement(tag);
 
-  addProps(element, props, vdom, options);
+  addProps(element, vdom, options);
   vdom.el = element;
   children.forEach((child) => {
     mountDom(child as VNode, element, { thisObject: options?.thisObject });
   });
+
   insert(element, container, index);
 }
 
@@ -130,14 +133,13 @@ function createElementNode(
  */
 function addProps(
   element: HTMLElement,
-  props: Record<string, any>,
   vdom: VElement,
   options?: { thisObject?: unknown }
 ) {
-  const { on: events, ...attrs } = props;
+  const { props, events } = extractPropsAndEvents(vdom);
 
   vdom.listeners = addEventListeners(events, element, options);
-  setAttributes(element, attrs);
+  setAttributes(element, props);
 }
 
 /**
