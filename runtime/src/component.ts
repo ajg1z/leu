@@ -20,6 +20,8 @@ export interface ComponentBase<
   updateState(state: any): void;
   updateProps(props: Props): void;
   patch(): void;
+  onMounted(): Promise<void>;
+  onUnmounted(): Promise<void>;
   emit(eventName: string, payload: unknown): void;
   render(): VNode;
   mount(hostElement: HTMLElement, index?: number): void;
@@ -32,6 +34,7 @@ type ComponentWithMethods<
   Methods extends Record<string, (this: any, ...args: any[]) => any>
 > = ComponentBase<State, Props> & Methods;
 
+function emptyFunction() {}
 export function defineComponent<
   State extends Record<string, any> = Record<string, any>,
   Props extends Record<string, any> = Record<string, any>,
@@ -43,6 +46,8 @@ export function defineComponent<
   render,
   state,
   methods,
+  onMounted,
+  onUnmounted,
 }: {
   render(this: ComponentWithMethods<State, Props, Methods>): VNode;
   state: (props: Props) => State;
@@ -52,6 +57,12 @@ export function defineComponent<
       ...args: any[]
     ) => any;
   };
+  onMounted?: (
+    this: ComponentWithMethods<State, Props, Methods>
+  ) => Promise<void>;
+  onUnmounted?: (
+    this: ComponentWithMethods<State, Props, Methods>
+  ) => Promise<void>;
 }) {
   class Component implements ComponentBase<State, Props> {
     public vdom: VNode | null = null;
@@ -152,6 +163,22 @@ export function defineComponent<
 
     emit(eventName: string, payload: unknown) {
       this.dispatcher.dispatch(eventName, payload);
+    }
+
+    onMounted() {
+      return Promise.resolve(
+        onMounted?.call(
+          this as unknown as ComponentWithMethods<State, Props, Methods>
+        )
+      );
+    }
+
+    onUnmounted() {
+      return Promise.resolve(
+        onUnmounted?.call(
+          this as unknown as ComponentWithMethods<State, Props, Methods>
+        )
+      );
     }
 
     patch() {

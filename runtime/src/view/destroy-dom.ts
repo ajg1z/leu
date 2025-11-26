@@ -1,5 +1,6 @@
 import { VElement, VFragment, VNode, VText } from "./h";
 import { removeEventListeners } from "./events";
+import { enqueueJob } from "../scheduler";
 
 export function destroyDom(vdom: VNode | null) {
   if (!vdom) return;
@@ -16,7 +17,9 @@ export function destroyDom(vdom: VNode | null) {
       break;
     case "component":
       vdom.instance?.unmount();
-      vdom.instance = null;
+      enqueueJob(() => {
+        vdom.instance?.onUnmounted();
+      });
       break;
     default:
       throw new Error(`Unknown node type`);

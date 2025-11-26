@@ -3,6 +3,7 @@ import {
   removeAttribute,
   removeStyle,
   setStyle,
+  parseStyle,
 } from "./attributes";
 import { destroyDom } from "./destroy-dom";
 import { addEventListener } from "./events";
@@ -73,13 +74,25 @@ function patchClasses(
 
 function patchStyles(
   el: HTMLElement,
-  oldStyle: Record<string, any>,
-  newStyle: Record<string, any>
+  oldStyle: Record<string, any> | string,
+  newStyle: Record<string, any> | string
 ) {
-  const { added, changed, removed } = objectsDiff(oldStyle, newStyle);
+  const oldStyleObject =
+    typeof oldStyle === "string" ? parseStyle(oldStyle) : oldStyle;
+  const newStyleObject =
+    typeof newStyle === "string" ? parseStyle(newStyle) : newStyle;
+
+  const { added, changed, removed } = objectsDiff(
+    oldStyleObject,
+    newStyleObject
+  );
 
   for (const styleKey of changed.concat(added)) {
-    setStyle(el, styleKey as keyof HTMLElement["style"], newStyle[styleKey]);
+    setStyle(
+      el,
+      styleKey as keyof HTMLElement["style"],
+      newStyleObject[styleKey]
+    );
   }
 
   for (const style of removed) {

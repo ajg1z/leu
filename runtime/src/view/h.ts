@@ -60,7 +60,13 @@ export function h<T extends keyof HTMLElementTagNameMap>(
 ): VElement<T>;
 
 // Перегрузка для компонентов
-export function h<T extends ComponentBase<Record<string, any>, any>>(
+export function h<
+  T extends new (
+    props: any,
+    eventsHandlers: any,
+    parentComponent: any
+  ) => ComponentBase<Record<string, any>, any>
+>(
   tag: T,
   props: Record<string, any>,
   children: (VNode | string)[]

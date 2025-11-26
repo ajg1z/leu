@@ -1,4 +1,5 @@
 import { ComponentBase } from "../component";
+import { enqueueJob } from "../scheduler";
 import { extractPropsAndEvents } from "../utils/props";
 import { setAttributes } from "./attributes";
 import { addEventListeners } from "./events";
@@ -21,6 +22,9 @@ export function mountDom(
       break;
     case "component":
       createComponentNode(vdom, container, options);
+      enqueueJob(() => {
+        vdom.instance?.onMounted();
+      });
       break;
     default:
       throw new Error(`Unknown node type ${vdom}`);

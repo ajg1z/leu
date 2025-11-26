@@ -11,6 +11,28 @@ type ElementAttributes = {
 };
 
 /**
+ * Parses a style string into an object.
+ * @param style - The style string to parse.
+ * @returns The parsed style object.
+ */
+export function parseStyle(style: string) {
+  if (!style) {
+    return {};
+  }
+
+  return String(style)
+    .split(";")
+    .filter(Boolean)
+    .reduce((acc, item) => {
+      const [key, value] = String(item).trim().split(":");
+      if (key && value) {
+        acc[key] = String(value).trim();
+      }
+      return acc;
+    }, {} as Record<string, string>);
+}
+
+/**
  * Sets the attributes of an element.
  * @param element - The element to set the attributes of.
  * @param attrs - The attributes to set.
@@ -23,9 +45,17 @@ export function setAttributes(element: HTMLElement, attrs: ElementAttributes) {
   }
 
   if (style) {
-    Object.entries(style).forEach(([key, value]) => {
-      setStyle(element, key as keyof ElementStyle, value as string);
-    });
+    if (typeof style === "string") {
+      const styleObject = parseStyle(style as string);
+
+      Object.entries(styleObject ?? {}).forEach(([key, value]) => {
+        setStyle(element, key as keyof ElementStyle, value as string);
+      });
+    } else {
+      Object.entries(style).forEach(([key, value]) => {
+        setStyle(element, key as keyof ElementStyle, value as string);
+      });
+    }
   }
 
   for (const [key, value] of Object.entries(otherAttrs)) {
@@ -56,7 +86,7 @@ function setClass(element: HTMLElement, className: string | string[]) {
  */
 export function setStyle(
   element: HTMLElement,
-  key: keyof HTMLElement['style'],
+  key: keyof HTMLElement["style"],
   value: string
 ) {
   (element.style as any)[key] = value;
@@ -67,7 +97,10 @@ export function setStyle(
  * @param element - The element to remove the style from.
  * @param key - The style to remove.
  */
-export function removeStyle(element: HTMLElement, key: keyof HTMLElement["style"]) {
+export function removeStyle(
+  element: HTMLElement,
+  key: keyof HTMLElement["style"]
+) {
   (element.style as any)[key] = null;
 }
 
